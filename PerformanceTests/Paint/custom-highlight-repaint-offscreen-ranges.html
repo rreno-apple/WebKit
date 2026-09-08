@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="../resources/runner.js"></script>
+<script src="resources/custom-highlight-repaint.js"></script>
+<title>Tracking the repaint cost of registered CSS Custom Highlight API ranges that are off-screen</title>
+<style>
+    body { margin: 0; }
+    #doc {
+        width: 784px;
+        padding: 8px;
+        outline: 0;
+        font: 13px/19.5px monospace, monospace;
+    }
+    #doc p {
+        margin: 0;
+        white-space: break-spaces;
+    }
+    ::highlight(demo) {
+        color: hsl(0 80% 45%);
+    }
+</style>
+</head>
+<body>
+<pre id="log"></pre>
+<div id="doc"></div>
+<script>
+// Time for one full-viewport rendering update with N_RANGES (240) CSS Custom
+// Highlight API ranges registered and then SCROLLED COMPLETELY OUT OF VIEW, so
+// that no highlighted text is painted at all.
+//
+// This is the sharpest regression test for rdar://186478678 / webkit.org/b/323171.
+// The bug had two parts, and this isolates the one that should not exist at all:
+// every painted text box consulted every registered range in the document, so
+// ranges thousands of pixels away still cost time on each repaint even though
+// none of them could possibly match. Whatever this test measures above
+// custom-highlight-repaint-no-highlights.html is pure overhead.
+//
+// Compare against custom-highlight-repaint-no-highlights.html: the document is
+// uniform paragraphs, so its repaint cost barely depends on scroll offset, which
+// makes it a fair baseline for this test as well as for the unscrolled one.
+//
+// Measured on one arm64 release build, before and after the fix for the bug
+// above, to show what a regression here looks like: baseline 1.2 ms, this test
+// 3.05 ms before the fix and 1.3 ms after. That is 1.85 ms per repaint of pure
+// overhead reduced to 0.2 ms, i.e. essentially back down to the baseline. Absolute
+// numbers are machine-dependent, but this test collapsing onto the baseline is the
+// property worth keeping.
+
+const SCROLL_Y = 60000; // Far past the 19 paragraphs that hold every range.
+
+function setupTest() {
+    if (!window.CSS || !CSS.highlights) {
+        PerfTestRunner.log("FAIL: this browser has no CSS Custom Highlight API.");
+        return;
+    }
+    buildDocument();
+    registerHighlights();
+    window.scrollTo(0, SCROLL_Y);
+    if (!window.scrollY) {
+        PerfTestRunner.log("FAIL: could not scroll the highlighted paragraphs out of view.");
+        return;
+    }
+    PerfTestRunner.prepareToMeasureValuesAsync({ done: cleanUp, unit: "ms" });
+    requestAnimationFrame(runRepaintTest);
+}
+
+onload = setupTest;
+</script>
+</body>
+</html>

@@ -29,6 +29,7 @@
 #include <WebCore/Range.h>
 #include <WebCore/StaticRange.h>
 #include <wtf/RefCountedAndCanMakeWeakPtr.h>
+#include <wtf/WeakHashMap.h>
 
 namespace WebCore {
 
@@ -85,10 +86,19 @@ public:
     void setAllRangesNeedPositionUpdate();
     const Vector<Ref<HighlightRange>>& highlightRanges() const LIFETIME_BOUND { return m_highlightRanges; }
 
+    // The ranges of this highlight that intersect a given node, so that painting a text box does not have to
+    // consider every range registered in the document. Rebuilt on demand after invalidateHighlightRangesForNode().
+    const Vector<Ref<HighlightRange>>& highlightRangesFor(const Node&) LIFETIME_BOUND;
+    void invalidateHighlightRangesForNode();
+
 private:
     explicit Highlight(FixedVector<std::reference_wrapper<AbstractRange>>&&);
 
+    void rebuildHighlightRangesForNode();
+
     Vector<Ref<HighlightRange>> m_highlightRanges;
+    WeakHashMap<Node, Vector<Ref<HighlightRange>>, WeakPtrImplWithEventTargetData> m_highlightRangesForNode;
+    bool m_hasValidHighlightRangesForNode { false };
     Type m_type { Type::Highlight };
     int m_priority { 0 };
 };

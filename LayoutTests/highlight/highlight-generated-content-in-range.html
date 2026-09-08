@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CSS Custom Highlight API: generated content inside a highlight range paints as it does without the node index</title>
+<style>
+#target {
+    font: 16px/20px monospace;
+    white-space: pre;
+    width: max-content;
+    color: black;
+}
+#generated::before {
+    content: "BBBB";
+}
+#target::highlight(test),
+#generated::highlight(test) {
+    background-color: lime;
+}
+</style>
+</head>
+<body>
+<p>PASS if the two groups of A are on lime and the four B between them are not.</p>
+<!-- The renderer for #generated::before is anonymous and has no text node, so it cannot be looked up
+     in a node-keyed highlight index and has to fall back to considering every registered range.
+     This test pins that fallback: ONE range spanning all of #target's children must paint exactly
+     what ranges covering only the two text nodes paint (the reference), i.e. the generated content
+     contributes nothing.
+
+     NOTE: that WebKit does not highlight generated content is pre-existing behaviour, verified by
+     running this test against unpatched main, where it produces a pixel-identical result. Whether it
+     SHOULD be highlighted is a separate question from the node index, and is deliberately not
+     asserted here; this test exists to catch the index silently changing it. -->
+<div id="target">AAAA<span id="generated"></span>AAAA</div>
+<script>
+const target = document.getElementById("target");
+const range = new Range();
+range.setStart(target, 0);
+range.setEnd(target, target.childNodes.length);
+CSS.highlights.set("test", new Highlight(range));
+</script>
+</body>
+</html>

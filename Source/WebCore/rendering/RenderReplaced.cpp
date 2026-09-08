@@ -217,11 +217,14 @@ inline static bool contentContainsReplacedElement(const Vector<WeakPtr<RenderedD
 Color RenderReplaced::calculateHighlightColor() const
 {
     RenderHighlight renderHighlight;
+    // An anonymous renderer has no element to look up in the highlight's node index, so it still has to
+    // consider every range registered in the document.
+    RefPtr element = this->element();
 #if ENABLE(APP_HIGHLIGHTS)
     if (auto appHighlightRegistry = document().appHighlightRegistryIfExists()) {
         if (appHighlightRegistry->highlightsVisibility() == HighlightVisibility::Visible) {
             for (auto& highlight : appHighlightRegistry->map()) {
-                for (auto& highlightRange : highlight.value->highlightRanges()) {
+                for (auto& highlightRange : element ? highlight.value->highlightRangesFor(*element) : highlight.value->highlightRanges()) {
                     if (!renderHighlight.setRenderRange(highlightRange))
                         continue;
 
@@ -238,7 +241,7 @@ Color RenderReplaced::calculateHighlightColor() const
 #endif
     if (auto highlightRegistry = document().highlightRegistryIfExists()) {
         for (auto& highlight : highlightRegistry->map()) {
-            for (auto& highlightRange : highlight.value->highlightRanges()) {
+            for (auto& highlightRange : element ? highlight.value->highlightRangesFor(*element) : highlight.value->highlightRanges()) {
                 if (!renderHighlight.setRenderRange(highlightRange))
                     continue;
 
@@ -255,7 +258,7 @@ Color RenderReplaced::calculateHighlightColor() const
     if (document().settings().scrollToTextFragmentEnabled()) {
         if (auto highlightRegistry = document().fragmentHighlightRegistryIfExists()) {
             for (auto& highlight : highlightRegistry->map()) {
-                for (auto& highlightRange : highlight.value->highlightRanges()) {
+                for (auto& highlightRange : element ? highlight.value->highlightRangesFor(*element) : highlight.value->highlightRanges()) {
                     if (!renderHighlight.setRenderRange(highlightRange))
                         continue;
 

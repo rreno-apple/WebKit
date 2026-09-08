@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="../resources/runner.js"></script>
+<script src="resources/custom-highlight-repaint.js"></script>
+<title>Tracking the repaint cost of the custom-highlight test document with no highlights</title>
+<style>
+    body { margin: 0; }
+    #doc {
+        width: 784px;
+        padding: 8px;
+        outline: 0;
+        font: 13px/19.5px monospace, monospace;
+    }
+    #doc p {
+        margin: 0;
+        white-space: break-spaces;
+    }
+    ::highlight(demo) {
+        color: hsl(0 80% 45%);
+    }
+</style>
+</head>
+<body>
+<pre id="log"></pre>
+<div id="doc"></div>
+<script>
+// Baseline companion to custom-highlight-repaint.html: the identical document,
+// built by the same resources/custom-highlight-repaint.js, with NO highlight
+// ranges registered.
+//
+// On its own this just tracks the repaint cost of a large contenteditable
+// document. Its purpose is to be subtracted from custom-highlight-repaint.html,
+// which is what isolates the per-registered-range cost that rdar://186478678 was
+// about, independently of how fast the machine is at painting the text.
+
+function setupTest() {
+    buildDocument();
+    PerfTestRunner.prepareToMeasureValuesAsync({ done: cleanUp, unit: "ms" });
+    requestAnimationFrame(runRepaintTest);
+}
+
+onload = setupTest;
+</script>
+</body>
+</html>

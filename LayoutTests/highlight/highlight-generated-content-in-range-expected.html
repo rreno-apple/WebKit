@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+#target {
+    font: 16px/20px monospace;
+    white-space: pre;
+    width: max-content;
+    color: black;
+}
+#generated::before {
+    content: "BBBB";
+}
+#target::highlight(test),
+#generated::highlight(test) {
+    background-color: lime;
+}
+</style>
+</head>
+<body>
+<p>PASS if the two groups of A are on lime and the four B between them are not.</p>
+<!-- Same DOM and same generated content as the test, and the same ::highlight() painting path, but
+     the highlight is built from two ranges that cover only the two text nodes, so the generated
+     content is excluded by construction rather than by the renderer having no text node. -->
+<div id="target">AAAA<span id="generated"></span>AAAA</div>
+<script>
+const target = document.getElementById("target");
+const first = new Range();
+first.setStart(target.childNodes[0], 0);
+first.setEnd(target.childNodes[0], target.childNodes[0].length);
+const last = new Range();
+last.setStart(target.childNodes[2], 0);
+last.setEnd(target.childNodes[2], target.childNodes[2].length);
+CSS.highlights.set("test", new Highlight(first, last));
+</script>
+</body>
+</html>

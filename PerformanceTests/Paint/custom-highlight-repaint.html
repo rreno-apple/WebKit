@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="../resources/runner.js"></script>
+<script src="resources/custom-highlight-repaint.js"></script>
+<title>Tracking the repaint cost of registered CSS Custom Highlight API ranges</title>
+<style>
+    body { margin: 0; }
+    #doc {
+        width: 784px;
+        padding: 8px;
+        outline: 0;
+        font: 13px/19.5px monospace, monospace;
+    }
+    #doc p {
+        margin: 0;
+        white-space: break-spaces;
+    }
+    ::highlight(demo) {
+        color: hsl(0 80% 45%);
+    }
+</style>
+</head>
+<body>
+<pre id="log"></pre>
+<div id="doc"></div>
+<script>
+// Time for one full-viewport rendering update with N_RANGES (240) CSS Custom
+// Highlight API ranges registered. See resources/custom-highlight-repaint.js.
+//
+// This is the regression test for rdar://186478678 / webkit.org/b/323171, where
+// each registered range added roughly 60 us to EVERY repaint even when it was
+// nowhere near the viewport, so 240 ranges turned a ~2.8 ms repaint into a ~17 ms
+// one and started dropping frames.
+//
+// Read this together with custom-highlight-repaint-no-highlights.html, which
+// measures the identical document with no ranges registered. The absolute
+// millisecond figure is machine-dependent; the meaningful quantity is the gap
+// between the two, divided by 240, which is the per-registered-range cost.
+//
+// Note that this test moves less than custom-highlight-repaint-offscreen-ranges.html
+// does. When the highlights are actually on screen, most of the cost is re-shaping
+// each line once per highlight fragment it is split into, which is a separate
+// problem from consulting every registered range. Expect this test to improve only
+// modestly from a fix to the latter, and prefer the off-screen test as the
+// regression guard for it.
+
+function setupTest() {
+    if (!window.CSS || !CSS.highlights) {
+        PerfTestRunner.log("FAIL: this browser has no CSS Custom Highlight API.");
+        return;
+    }
+    buildDocument();
+    registerHighlights();
+    PerfTestRunner.prepareToMeasureValuesAsync({ done: cleanUp, unit: "ms" });
+    requestAnimationFrame(runRepaintTest);
+}
+
+onload = setupTest;
+</script>
+</body>
+</html>

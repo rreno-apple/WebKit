@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+#target {
+    font: 16px/20px monospace;
+    white-space: pre;
+    width: max-content;
+    color: black;
+}
+#target::highlight(test),
+#inner::highlight(test) {
+    background-color: lime;
+}
+</style>
+</head>
+<body>
+<p>PASS if the bar below is one solid lime rectangle with no gap in the middle.</p>
+<!-- Structurally parallel to the test: the same three text runs, the same nesting depth, and the
+     same ::highlight() painting path, so the seams between abutting highlight rects fall in the
+     same places. The single variable under test is whether the middle run lives in a shadow tree
+     (test) or in the light DOM (this reference). -->
+<div id="target">AAAA<span id="inner">AAAA</span>AAAA</div>
+<script>
+const target = document.getElementById("target");
+const range = new Range();
+range.setStart(target, 0);
+range.setEnd(target, target.childNodes.length);
+CSS.highlights.set("test", new Highlight(range));
+</script>
+</body>
+</html>
